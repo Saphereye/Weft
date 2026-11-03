@@ -65,6 +65,8 @@ pub struct LocalPlayer {
     /// sprinting or flying).
     pub eye: f64,
     pub fov_mul: f32,
+    /// Local view FOV multiplier from mods (`PlayerControl::VIEW_FOV`); reset each frame.
+    pub view_fov: f32,
     /// Lower box and eyes. Stays on under a low ceiling until there is room for more.
     pub pose: Pose,
     /// A pose a mod holds it in, where it fits, and with a facing it stays put that way (a bed).
@@ -770,6 +772,7 @@ impl Client {
                 jump_cooldown: 0,
                 eye: 1.62,
                 fov_mul: 1.0,
+                view_fov: 1.0,
                 pose: Pose::STAND,
                 forced: None,
                 sprinting: false,
@@ -976,6 +979,11 @@ impl Client {
         if self.menu.take().is_some() {
             self.conn.send(ToServer::CloseMenu);
         }
+    }
+
+    /// F1, or a mod narrowing view with `view_fov` (OptiFine-style zoom).
+    pub(crate) fn suppress_world_hud(&self) -> bool {
+        self.hide_gui || self.player.view_fov < 0.995
     }
 
     pub fn update(&mut self, gpu: &mut dyn Backend, textures: &GameTextures, input: &mut Input, dt: f64) {
@@ -1815,7 +1823,7 @@ impl Client {
     fn overlays(&self, textures: &GameTextures) -> Vec<sky::Overlay> {
         let c = content();
         let mut out = Vec::new();
-        if !self.camera_has(weft_abi::camera_flags::EFFECTS) || self.hide_gui {
+        if !self.camera_has(weft_abi::camera_flags::EFFECTS) || self.suppress_world_hud() {
             return out;
         }
         let light = self.daylight().max(0.25);
@@ -2260,7 +2268,7 @@ impl Client {
             pos: self.smooth_pos() + DVec3::Y * self.player.eye + pillow,
             yaw: self.player.yaw,
             pitch: self.player.pitch,
-            fov: self.fov * self.player.fov_mul * self.attribute(crate::server::extend::FOV) * inside,
+            fov: self.fov * self.player.fov_mul * self.player.view_fov * self.attribute(crate::server::extend::FOV) * inside,
             bob: (Vec3::ZERO, 0.0, 0.0),
         }
     }
@@ -2518,7 +2526,7 @@ impl Client {
         );
         self.render.draw_translucent(&mut late);
         let alive = !self.dead && !self.mode.has(weft_abi::game_mode_flags::NO_INTERACT);
-        let hand = (alive && self.camera_has(weft_abi::camera_flags::HAND) && !self.hide_gui).then(|| entity_render::Hand {
+        let hand = (alive && self.camera_has(weft_abi::camera_flags::HAND) && !self.suppress_world_hud()).then(|| entity_render::Hand {
             lowered: 1.0 - self.hand_height,
             lag: (self.player.pitch - self.hand_view.0, angle_diff(self.player.yaw, self.hand_view.1)),
             body: self.first_person_model,
@@ -2555,7 +2563,7 @@ impl Client {
             &scene,
             scene_buf,
             self.target
-                .filter(|_| !self.hide_gui)
+                .filter(|_| !self.suppress_world_hud())
                 .map(|h| (h, self.frame_place(h.frame).origin())),
             &cracks,
             &self.gizmo_lines,

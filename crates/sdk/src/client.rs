@@ -89,6 +89,23 @@ impl Client {
         self.input(abi::client_input::SCROLL, "", steps, 0.0);
     }
 
+    /// Mouse wheel this frame; clears the delta when `consume` is true (so hotbar scroll won't run).
+    pub fn scroll_wheel(&self, consume: bool) -> f32 {
+        let bits = unsafe {
+            (host().client_input)(self.raw, abi::client_input::SCROLL_DELTA, abi_str(""), consume as u32 as f32, 0.0)
+        };
+        f32::from_bits(bits)
+    }
+
+    /// Extra FOV multiplier for the local view (1 = normal); composes with sprint/flight FOV.
+    pub fn view_fov(&self, scale: f32) {
+        self.control(&abi::PlayerControl {
+            mask: abi::control_mask::VIEW_FOV,
+            view_fov: scale,
+            ..abi::PlayerControl::DEFAULT
+        });
+    }
+
     /// Text typed into the focused field.
     pub fn input_type(&self, text: &str) {
         self.input(abi::client_input::TYPE, text, 0.0, 0.0);

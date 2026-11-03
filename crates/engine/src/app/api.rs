@@ -319,6 +319,13 @@ pub unsafe extern "C" fn client_input(c: *mut abi::ClientCtx, op: u32, text: Str
                 r.input.release_all();
                 r.mod_held.clear();
             }
+            ci::SCROLL_DELTA => {
+                let s = r.input.scroll;
+                if x != 0.0 {
+                    r.input.scroll = 0.0;
+                }
+                return s.to_bits();
+            }
             _ => return 0,
         }
         1
@@ -362,6 +369,9 @@ pub unsafe extern "C" fn client_set_player(c: *mut abi::ClientCtx, control: *con
         }
         if ctl.mask & m::FLY_SPEED != 0 {
             p.fly_speed = ctl.fly_speed.max(0.0);
+        }
+        if ctl.mask & m::VIEW_FOV != 0 {
+            p.view_fov = ctl.view_fov.clamp(0.05, 2.0);
         }
         if ctl.mask & m::SELECTED != 0 && ctl.selected < crate::content::content().game.player_layout.hotbar {
             g.client.selected = ctl.selected as usize;
@@ -805,3 +815,4 @@ pub unsafe extern "C" fn client_play_sound(c: *mut abi::ClientCtx, sound: u32, p
             .push(crate::audio::Play { sound, pos, volume, pitch });
     }
 }
+

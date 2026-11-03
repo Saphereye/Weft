@@ -1,0 +1,14 @@
+[package]
+name = "zoom"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+weft_sdk.workspace = true
+
+[package.metadata.weft]
+dist = true

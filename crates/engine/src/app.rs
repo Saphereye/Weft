@@ -309,6 +309,11 @@ fn hud_hidden() -> bool {
     o.contains_key("hide-hud") || o.get("record").is_some_and(|v| v == "nohud")
 }
 
+/// Hold-to-zoom (`mods/zoom`) hides the world HUD the way F1 does. Screens stay up.
+fn zooming(r: &Running) -> bool {
+    r.screens.is_empty() && r.game.as_ref().is_some_and(|g| g.client.player.view_fov < 0.995)
+}
+
 /// `--record`: a script run on screen for filming (full screen, animated time, no cursor).
 fn recording() -> bool {
     api::launch_options().contains_key("record")
@@ -1716,6 +1721,9 @@ fn start_frame(r: &mut Running, opts: &Options, dt: f64) {
     r.release_mod_keys();
     r.mod_gizmos.clear();
     r.mod_screen_text.clear();
+    if let Some(g) = &mut r.game {
+        g.client.player.view_fov = 1.0;
+    }
     r.client_hooks(abi::client_hook::FRAME, "");
     if opts.automated && r.screens.is_empty() && r.game.is_some() {
         // The window may not have focus while a mod drives it.
@@ -2147,7 +2155,7 @@ fn build_ui_quads(r: &mut Running, scale: f32) {
         .as_ref()
         .is_some_and(|g| g.client.camera_has(weft_abi::camera_flags::HUD))
         || !r.screens.is_empty();
-    if r.game.is_some() && hud && !hud_hidden() && !(r.hud_off && r.screens.is_empty()) {
+    if r.game.is_some() && hud && !hud_hidden() && !(r.hud_off && r.screens.is_empty()) && !zooming(r) {
         layers.push(&r.hud.ui);
     }
     // Only the top screen shows, like vanilla: the ones under it are not drawn through its
@@ -2208,7 +2216,7 @@ fn draw_overlays(r: &mut Running, info: &weft_render::FrameInfo, scale: f32, tex
         }
     }
     let (sw, sh) = r.gpu.surface_size();
-    if !hud_hidden() && !(r.hud_off && r.screens.is_empty()) {
+    if !hud_hidden() && !(r.hud_off && r.screens.is_empty()) && !zooming(r) {
         labels.extend(
             r.mod_screen_text
                 .iter()

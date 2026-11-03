@@ -4707,6 +4707,8 @@ pub mod client_input {
     /// `text` typed into the focused field.
     pub const TYPE: u32 = 5;
     pub const RELEASE_ALL: u32 = 6;
+    /// Mouse wheel this frame: return value is `f32::to_bits` of the delta; `x` non-zero clears it.
+    pub const SCROLL_DELTA: u32 = 7;
 }
 
 /// Fields of `PlayerControl` to apply.
@@ -4717,6 +4719,8 @@ pub mod control_mask {
     pub const FLYING: u32 = 8;
     pub const FLY_SPEED: u32 = 16;
     pub const SELECTED: u32 = 32;
+    /// Extra FOV multiplier for the local view (mods); sprint/flight use `fov_mul` separately.
+    pub const VIEW_FOV: u32 = 128;
 }
 
 #[repr(C)]
@@ -4731,8 +4735,20 @@ pub struct PlayerControl {
     /// Spectator/creative flight speed multiplier.
     pub fly_speed: f32,
     pub selected: u32,
+    /// With `VIEW_FOV`.
+    pub view_fov: f32,
 }
-defaults!(PlayerControl { mask: 0, pos: Vec3::ZERO, vel: Vec3::ZERO, yaw: 0.0, pitch: 0.0, flying: 0, fly_speed: 1.0, selected: 0 });
+defaults!(PlayerControl {
+    mask: 0,
+    pos: Vec3::ZERO,
+    vel: Vec3::ZERO,
+    yaw: 0.0,
+    pitch: 0.0,
+    flying: 0,
+    fly_speed: 1.0,
+    selected: 0,
+    view_fov: 1.0
+});
 
 /// `Host::client_op` operations.
 pub mod client_op {

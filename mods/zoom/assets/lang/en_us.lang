@@ -1,0 +1,11 @@
+mod.zoom.name = Zoom
+mod.zoom.desc = Hold-to-zoom camera (OptiFine-style).
+
+config.zoom.scale = Zoom strength
+config.zoom.scale.desc = Field-of-view scale while the zoom key is held (lower = closer). 0.15 is about 4–5× at default FOV.
+config.zoom.scroll = Scroll step
+config.zoom.scroll.desc = How much each wheel notch changes zoom while the key is held (scroll up = zoom in).
+config.zoom.smooth = Zoom smoothness
+config.zoom.smooth.desc = How fast zoom eases in and out each frame.
+
+key.zoom.zoom = Zoom in
